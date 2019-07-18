@@ -2,10 +2,15 @@ import * as React from 'react';
 import { Portal } from 'react-portal';
 import hash from 'string-hash';
 
-const FileInput = (props: any) => {
-  const { children, onChange } = props;
+export const FileInput = (props: any) => {
+  const { children, createImages } = props;
 
   const inputEl = React.useRef<HTMLInputElement>(null);
+
+  type imageProps = {
+    checksum: string;
+    data: string;
+  };
 
   const onClick = (event: any) => {
     event.preventDefault();
@@ -17,17 +22,26 @@ const FileInput = (props: any) => {
 
   const onInputChange = (event: any) => {
     const files = event.target.files;
+    const imageProps: imageProps[] = [];
+    let counter = 0;
+
+    const onLoad = (reader: any) => {
+      const data = reader.result as string;
+
+      const checksum = String(hash(data as string));
+
+      imageProps.push({ checksum, data });
+      counter += 1;
+
+      if (counter === files.length) {
+        createImages(imageProps);
+      }
+    };
 
     for (const file of files) {
       const reader: FileReader = new FileReader();
 
-      reader.onload = () => {
-        const data = reader.result;
-
-        const checksum = String(hash(data as string));
-
-        onChange({ checksum, data }, event);
-      };
+      reader.onload = onLoad;
 
       reader.readAsDataURL(file);
     }
@@ -58,5 +72,3 @@ const FileInput = (props: any) => {
     </React.Fragment>
   );
 };
-
-export default FileInput;
